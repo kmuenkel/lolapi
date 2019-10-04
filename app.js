@@ -1,11 +1,12 @@
 var express = require("express");
 var request = require("request");
 var app = express();
-var apiKey = "";
+require('dotenv').config();
+var apiKey = process.env.API_KEY;
 app.set("view engine", "pug");
 
 app.get("/", function(req, res){
-    res.render("search");
+    res.render("search", {key: apiKey});
 });
 
 app.get("/results", function(req, res){

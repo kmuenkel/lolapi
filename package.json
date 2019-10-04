@@ -3,13 +3,20 @@
   "version": "1.0.0",
   "description": "League of Legends API",
   "main": "app.js",
+  "watch": {
+    "test": "*.js || *.pug"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "cp -n .env.example .env && npm install",
+    "dev": "npm run build && nodemon"
   },
   "author": "SudoTorres",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^8.1.0",
     "express": "^4.17.1",
+    "npm-watch": "^0.6.0",
     "pug": "^2.0.4",
     "request": "^2.88.0"
   }
