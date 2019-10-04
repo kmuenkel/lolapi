@@ -6,7 +6,7 @@ var apiKey = process.env.API_KEY;
 app.set("view engine", "pug");
 
 app.get("/", function(req, res){
-    res.render("search", {key: process.env.API_KEY});
+    res.render("search", {key: apiKey});
 });
 
 app.get("/results", function(req, res){
