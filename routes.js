@@ -13,11 +13,11 @@ router.get("/results", function(req, res)
         //TODO: Call a Transformer class that can alter the content of 'response' to suit your 'index' View
 
         response && res.render("index", {leagueData: response});
-    }
+    };
 
     var query = req.query.search;
     var adapter = new LolAdapter(transformer);
-    adapter.getSummonerData(query);
+    adapter.getSummonerDataByName(query);
 
 });
 

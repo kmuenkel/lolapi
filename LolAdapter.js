@@ -5,37 +5,41 @@ const request = require("request");
 class LolAdapter
 {
     /**
-     * @param {object} transformer 
+     * @param {object} callback
      */
-    constructor(transformer)
+    constructor(callback)
     {
-        //TODO: The transformer -may- need to be applied on a per-method basis instead of to the entire object.
-        this.transformer = transformer;
+        this.callback = callback;
+        this.domain = LOL_DOMAIN;
     }
 
     getSummonerDataByName(name)
     {
-        //TODO: Use both getSummonerData and getLeagueData to compile the results
+        //'self' is the instance that still has an awareness of the original callback set by the controller
+        var self = this;
+        var callback = function(data)
+        {
+            var id = data.id;
+            self.getLeagueData(id);
+        };
+
+        //We need a clean instance of this class for the first step to this process flow
+        var adapter = new this(callback);
+
+        adapter.getSummonerData(name);
+
+        //TODO: A cleaner solution might be to chain promises
     }
 
     /**
-     * TODO: Return the summoner data instead of leveraging it directly
      * get summoner id by summoner name
      * @param {string} query summoner name
      */
     getSummonerData(query)
     {
-        var urlId = LOL_DOMAIN + "/lol/summoner/v4/summoners/by-name/" + query + "?api_key=" + API_KEY; // summoner
-        
-        var self = this;
-        var handler = function(body)
-        {
-            var summonerData = JSON.parse(body);
-            var id = summonerData.id;
-            self.getLeagueData(id);
-        };
+        var urlId = "lol/summoner/v4/summoners/by-name/" + query + "?api_key=" + API_KEY; // summoner
 
-        this.handleResponse(urlId, handler);
+        return this.handleResponse(urlId);
     }
     
     /**
@@ -44,35 +48,37 @@ class LolAdapter
      */
     getLeagueData(id)
     {
-        var urlLeague = LOL_DOMAIN + "/lol/league/v4/entries/by-summoner/" + id + "?api_key=" + API_KEY; // league
+        var urlLeague = "lol/league/v4/entries/by-summoner/" + id + "?api_key=" + API_KEY; // league
 
-        
-        var handler = function(body)
-        {
-            var leagueData = JSON.parse(body);
-
-            return leagueData;
-        };
-
-        this.handleResponse(urlLeague, handler);
+        return this.handleResponse(urlLeague);
     }
     
     /**
-     * @param {string} url API end point
-     * @param {object} handler closure function
+     * @param {string} endpoint API end point
+     * @param {object|null} handler An opportunity for each endpoint to define it's own response transformations
      */
-    handleResponse(url, handler)
+    handleResponse(endpoint, handler = null)
     {
+        //TODO: May want to move the concatenation of the api_key GET variable to here as well, if it is a safe assumption that all endpoints in this adapter will require it.  May also be worth checking to see if the the API key can be included as an Authorization header instead of a GET variable.
+        var url = this.domain + "/" + endpoint;
+
+        //Default handler that just returns the data, so that supplying one can be optional
+        handler = handler ? handler : function (data) {
+            return data;
+        };
+
         var self = this;
-        request(url, function(error, response, body)
+        var transaction = request(url, function(error, response, body)
         {
             if(!error && response.statusCode == 200)
             {
-                //TODO: This only works as expected if getSummonerData returns nothing.  Not a clean solution.
-                response = handler(body);
-                self.transformer(response);
+                var data = JSON.parse(body);
+                response = handler(data);
+                self.callback(response);
             }
         });
+
+        return transaction;
     }
 }
 
